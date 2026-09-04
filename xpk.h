@@ -2,19 +2,15 @@
 #define XPK_H
 
 /// === === === === === === DLL AND PLATFORM === === === === === ===
-#if defined(xpkdllexport)
-	#define xpkapi __attribute__((dllexport))			///< dllexport
-#else
-  #define xpkapi
-#endif ///< dll
+#define xpkapi
 
 #if defined(_WIN32)
 	#define XUS_WIN32
-	#include <windows.h>
+	#include <windows.h>		///< as for now it'll only support windows
 #else
   #error "platform is not supported yet"
 #endif ///< platform
-/// === === === === === === DLL AND PLATFORM === === === === === ===
+/// === === === === === === DLL AND PLATFORM === === === === === === (end)
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,12 +31,12 @@ typedef struct {
 typedef struct {
   int width;
   int height;
- 	XHWND ws;						///< if you are wondering this is 'window struct' representing XHWND
+  XHWND ws;					///< if you are wondering this is 'window struct' representing XHWND
   const char *title;
   bool running;				///< needed for loop
 } xpkWindow;
 
-/*
+/* i'll work on this later
 typedef struct {
   int *data;
   size_t size;
@@ -82,6 +78,7 @@ xpkapi void xpkEnd();
  * == == == INPUT FOR KEYBOARD == == == * 
 *****************************************/
 
+// this isn't fully complete yet
 #define SPACE 32
 #define APOST 39
 
@@ -106,10 +103,10 @@ xpkGetError() {
 
 // STATIC VARIABLES
 static HINSTANCE 			hInst;
-static bool 					xpkInitialized;				///< needed for xpkBegin and xpkEnd
-static xpkError       err;									///< needed for error handling
-static int 						xpkTrue 				= 1;	///< its like in GLFW	
-static int 						xpkFalse 				= 0;	///< also like in GLFW
+static bool 				xpkInitialized;					///< needed for xpkBegin and xpkEnd
+static xpkError       		err;							///< needed for error handling
+static int 					xpkTrue 	= 1;	///< its like in GLFW	
+static int 					xpkFalse 	= 0;	///< also like in GLFW
 
 // STATIC FUNCTIONS
 static LRESULT CALLBACK WinProc(
@@ -131,8 +128,8 @@ xpkapi int xpkBegin() {
   xpkInitialized = true;
   hInst = GetModuleHandle(NULL);
   WNDCLASS wc = {};
-  wc.lpfnWndProc 			= WinProc;
-  wc.hInstance 			  = hInst;
+  wc.lpfnWndProc 		= WinProc;
+  wc.hInstance 			= hInst;
   wc.lpszClassName 		= "xpkWindowClass";
 
   if (!RegisterClassA(&wc)) {
@@ -243,7 +240,7 @@ xpkapi void xpkEnd() {
     return;
 
   xpkInitialized 	= false;
-  hInst 					= NULL;
+  hInst 			= NULL;
 }
 
 #endif
