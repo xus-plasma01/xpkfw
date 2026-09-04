@@ -10,10 +10,16 @@ int main(void) {
 		xpkEnd();
 	}
 
+	/// opens the window
+	/// in Win32 this is
+	/// ShowWindow(hwnd, SW_SHOW);
+	xpkOpenWindow(window, SW_SHOW);
+
+	/// loop
 	while (!xpkWindowShouldClose(window)) {
-		xpkWaitFrames(window);
-		xpkSwapFrames(window);
+		xpkWaitEvents(window);	///< in glfw this is "glfwPollEvents()"
+		xpkSwapFrames(window);	///< in glfw this is "glfwSwapBuffers(window)"
 	}
 
-	xpkEnd();
+	xpkEnd();	///< terminates entire lib
 }
