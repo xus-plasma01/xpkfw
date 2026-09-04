@@ -3,11 +3,15 @@
 #include "xpk.h"
 
 int main(void) {
+	/// xpkWindow * xpkCreateWindow(int width, int height, const char * title);
+	/// this function creates the window 
 	xpkWindow *window = xpkCreateWindow(800, 600, "xpk [core] example - basic window");
+
+	/// for error handling
 	if (!window) {
-		fprintf(stderr, "%c", xpkGetError();
-		xpkDeleteWindow(window);
-		xpkEnd();
+		fprintf(stderr, "%c", xpkGetError());
+		xpkDeleteWindow(window);	///< deletes window bc error
+		xpkEnd();					///< terminates entire lib
 	}
 
 	/// opens the window
