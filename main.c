@@ -1,3 +1,10 @@
+/**
+ * this goes under GPLv3
+ * you can read it inside LICENSE
+ * don't hesitate to make a pull request if there are any issues!
+ * i feel like there'll be alot...
+**/
+
 #define XUS_IMPL
 #define XUS_WIN32
 #include "xpk.h"
