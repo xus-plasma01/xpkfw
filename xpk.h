@@ -2,7 +2,7 @@
 #define XPK_H
 
 /// === === === === === === DLL AND PLATFORM === === === === === ===
-#define xpkapi
+#define xpkapi		///< idk what to do with this yet
 
 #if defined(_WIN32)
 	#define XUS_WIN32
