@@ -2,15 +2,15 @@
 #define XPK_H
 
 /// === === === === === === DLL AND PLATFORM === === === === === ===
-#define xpkapi		///< idk what to do with this yet
+#define xpkapi
 
 #if defined(_WIN32)
 	#define XUS_WIN32
-	#include <windows.h>		///< as for now it'll only support windows
+	#include <windows.h>
 #else
   #error "platform is not supported yet"
 #endif ///< platform
-/// === === === === === === DLL AND PLATFORM === === === === === === (end)
+/// === === === === === === DLL AND PLATFORM === === === === === ===
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,12 +31,12 @@ typedef struct {
 typedef struct {
   int width;
   int height;
-  XHWND ws;					///< if you are wondering this is 'window struct' representing XHWND
+ 	XHWND ws;						///< if you are wondering this is 'window struct' representing XHWND
   const char *title;
   bool running;				///< needed for loop
 } xpkWindow;
 
-/* i'll work on this later
+/*
 typedef struct {
   int *data;
   size_t size;
@@ -44,12 +44,13 @@ typedef struct {
 } xpkVector;
 */
 
+typedef const char xpkError; 
 typedef struct {
   DWORD code;
   char msg[512];
-} xpkError;
+} xpkErrorInstance;
 
-xpkapi int xpkBegin();   	///< this goes first, it begins the library
+xpkapi int xpkBegin(void);   	///< this goes first, it begins the library
 
 xpkapi xpkWindow *
 xpkCreateWindow(					///< this goes in second, it creates the window
@@ -57,11 +58,13 @@ xpkCreateWindow(					///< this goes in second, it creates the window
   int height,
   const char *title);
 
-xpkapi unsigned long
-xpkGetError();
+xpkapi const char *
+xpkGetError(void);
 
 xpkapi void
-xpkOpenWindow(xpkWindow *window, int nCmdShow);
+xpkOpenWindow(
+  xpkWindow *window, 
+  int nCmdShow);
 
 xpkapi bool 
 xpkWindowShouldClose(xpkWindow *window);		///< this is the loop
@@ -72,13 +75,12 @@ xpkapi void xpkSwapFrames(xpkWindow *window);
 xpkapi void 
 xpkDeleteWindow(xpkWindow *window);
 
-xpkapi void xpkEnd();
+xpkapi void xpkEnd(void);
 
 /****************************************
  * == == == INPUT FOR KEYBOARD == == == * 
 *****************************************/
 
-// this isn't fully complete yet
 #define SPACE 32
 #define APOST 39
 
@@ -95,18 +97,13 @@ xpkapi void xpkEnd();
 #ifdef XUS_WIN32
 #include <windows.h>
 
-// ERROR HANDLING
-xpkapi unsigned long
-xpkGetError() {
-	return GetLastError();
-}
 
 // STATIC VARIABLES
-static HINSTANCE 			hInst;
-static bool 				xpkInitialized;					///< needed for xpkBegin and xpkEnd
-static xpkError       		err;							///< needed for error handling
-static int 					xpkTrue 	= 1;	///< its like in GLFW	
-static int 					xpkFalse 	= 0;	///< also like in GLFW
+static HINSTANCE 							hInst;
+static bool 									xpkInitialized;				///< needed for xpkBegin and xpkEnd
+static xpkErrorInstance       err;									///< needed for error handling
+static int 										xpkTrue 				= 1;	///< its like in GLFW	
+static int 										xpkFalse 				= 0;	///< also like in GLFW
 
 // STATIC FUNCTIONS
 static LRESULT CALLBACK WinProc(
@@ -124,23 +121,43 @@ static LRESULT CALLBACK WinProc(
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-xpkapi int xpkBegin() {
+xpkapi xpkError *
+xpkGetError(void) {
+  err.code = GetLastError();
+  FormatMessageA(
+    FORMAT_MESSAGE_FROM_SYSTEM |
+    FORMAT_MESSAGE_IGNORE_INSERTS,
+    NULL,
+    err.code,
+    0,
+    err.msg,
+    sizeof(err.msg),
+    NULL
+  );
+
+  return err.msg;
+}
+
+xpkapi int 
+xpkBegin(void) {
   xpkInitialized = true;
   hInst = GetModuleHandle(NULL);
   WNDCLASS wc = {};
-  wc.lpfnWndProc 		= WinProc;
-  wc.hInstance 			= hInst;
+  wc.lpfnWndProc 			= WinProc;
+  wc.hInstance 			  = hInst;
   wc.lpszClassName 		= "xpkWindowClass";
 
   if (!RegisterClassA(&wc)) {
-    DWORD err = GetLastError();
+    xpkError *err = xpkGetError();
     fprintf(stderr, "window class registeration failed\n");
-    fprintf(stderr, "error code: %lu\n", (unsigned long)err);
+    fprintf(stderr, "error code: %s\n", err);
     xpkEnd();
   }
 
   return 1;
 }
+
+
 
 xpkapi xpkWindow *
 xpkCreateWindow(
@@ -156,6 +173,7 @@ xpkCreateWindow(
   window->width 	= width;
   window->height 	= height;
   window->title		= title;
+  window->running = true;
 
   window->ws.hwnd = CreateWindowExA(
     0,
@@ -187,10 +205,12 @@ xpkCreateWindow(
 }
 
 xpkapi void
-xpkOpenWindow(xpkWindow *window, int nCmdShow) {
-  if (!window) {
+xpkOpenWindow(
+  xpkWindow *window,
+  int nCmdShow)
+{
+  if (!window)
     fprintf(stderr, "window doesn't exist");
-  }
 
   ShowWindow(window->ws.hwnd, nCmdShow);
   UpdateWindow(window->ws.hwnd);
@@ -235,12 +255,12 @@ xpkDeleteWindow(xpkWindow *window) {
   }
 } 
 
-xpkapi void xpkEnd() {
+xpkapi void xpkEnd(void) {
   if (!xpkInitialized)
     return;
 
   xpkInitialized 	= false;
-  hInst 			= NULL;
+  hInst 					= NULL;
 }
 
 #endif
