@@ -10,9 +10,16 @@ xpkfw - a small glfw clone i made
 ## XPKFW DOCS (kinda)
 `typedef struct xpkWindow` - the xpkWindow struct for windows
 
-
 ```c
-xpkWindow * xpkCreateWindow(
+xpkapi xpkError *
+xpkGetError()
+```
+this is used for error handling.
+
+`xpkapi int xpkBegin` - begins the lib
+```c
+xpkapi xpkWindow * 
+xpkCreateWindow(
   int            width,
   int            height,
   const char *   title
@@ -21,5 +28,21 @@ xpkWindow * xpkCreateWindow(
 This is the function used
 for window creation.
 
+```c
+xpkapi void xpkOpenWindow(
+        xpkWindow * window,
+        int nCmdShow);
+```
+this is used for opening the window
 
-`void xpkDeleteWindow(xpkWindow * window)` - used for window deletion/removal
+```c
+xpkapi bool
+xpkWindowShouldClose(xpkWindow * window);
+```
+this is for loops
+
+`xpkapi void xpkWaitEvents(xpkWindow * window);` - used for polling events
+`xpkapi void xpkSwapFrames(xpkWindow * window);` - used for swapping the buffers
+
+`void xpkDeleteWindow(xpkWindow * window);` - used for window deletion/removal
+`void xpkEnd();` - ends the library
