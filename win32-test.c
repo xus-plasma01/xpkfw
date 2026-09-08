@@ -9,51 +9,50 @@ LRESULT CALLBACK wp(
   WPARAM wparam,
   LPARAM lparam)
 {
-    switch (msg) {
-    case WM_DESTROY:
-      PostQuitMessage(0);
-      return 0;
+  switch (msg) {
+  case WM_DESTROY:
+    PostQuitMessage(0);
+    return 0;
 
-    default:
-      return DefWindowProcW(
-        hwnd,
-        msg,
-        wparam,
-        lparam
-      );
-    }
+  default:
+    return DefWindowProcW(
+      hwnd,
+      msg,
+      wparam,
+      lparam
+    );
+  }
 }
 
 int main(void)
 {
-    HINSTANCE hInstance = GetModuleHandleW(NULL);
-    const wchar_t CLSNAME[] = L"Sample window class";
-    WNDCLASSW wc = {0};
-    wc.lpfnWndProc   = wp;
-    wc.hInstance     = hInstance;
-    wc.lpszClassName = CLSNAME;
+  HINSTANCE hInstance = GetModuleHandleW(NULL);
+  const wchar_t CLSNAME[] = L"Sample window class";
+  WNDCLASSW wc = {0};
+  wc.lpfnWndProc   = wp;
+  wc.hInstance     = hInstance;
+  wc.lpszClassName = CLSNAME;
     
-    if (!RegisterClassW(&wc)) {
-        return 1;
-    }
+  if (!RegisterClassW(&wc)) {
+      return 1;
+  }
 
-    HWND hwnd = CreateWindowExW(
-        0,
-        CLSNAME,
-        L"Learn to program windows",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        800,
-        600,
-        NULL,
-        NULL,
-        hInstance,
-        NULL
-    );
+  HWND hwnd = CreateWindowExW(
+      0,
+      CLSNAME,
+      L"Window test",
+      WS_OVERLAPPEDWINDOW,
+      CW_USEDEFAULT,
+      CW_USEDEFAULT,
+      800,
+      600,
+      NULL,
+      NULL,
+      hInstance,
+      NULL);
 
     if (hwnd == NULL)
-        return -1;
+      return -1;
 
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
