@@ -13,7 +13,6 @@ LRESULT CALLBACK wp(
   case WM_DESTROY:
     PostQuitMessage(0);
     return 0;
-
   default:
     return DefWindowProcW(hwnd, msg, wparam, lparam);
   }
@@ -28,37 +27,36 @@ int main(void)
   wc.hInstance     = hInstance;
   wc.lpszClassName = CLSNAME;
     
-  if (!RegisterClassW(&wc)) {
-      return 1;
-  }
+  if (!RegisterClassW(&wc)) 
+    return 1;
 
   HWND hwnd = CreateWindowExW(
-      0,
-      CLSNAME,
-      L"Window test",
-      WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT,
-      CW_USEDEFAULT,
-      800,
-      600,
-      NULL,
-      NULL,
-      hInstance,
-      NULL);
+    0,
+    CLSNAME,
+    L"Window test",
+    WS_OVERLAPPEDWINDOW,
+    CW_USEDEFAULT,
+    CW_USEDEFAULT,
+    CW_USEDEFAULT,
+    CW_USEDEFAULT,
+    NULL,
+    NULL,
+    hInstance,
+    NULL);
 
-    if (hwnd == NULL)
-      return -1;
+  if (hwnd == NULL)
+    return -1;
 
-    ShowWindow(hwnd, SW_SHOW);
-    UpdateWindow(hwnd);
+  ShowWindow(hwnd, SW_SHOW);
+  UpdateWindow(hwnd);
 
-    MSG msg = {0};
+  MSG msg = {0};
 
-    while (GetMessageW(&msg, NULL, 0, 0) > 0) {
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
-    }
+  while (GetMessageW(&msg, NULL, 0, 0) > 0) {
+    TranslateMessage(&msg);
+    DispatchMessageW(&msg);
+  }
 
-    return 0;
+  return 0;
 }
 
