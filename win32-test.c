@@ -15,12 +15,7 @@ LRESULT CALLBACK wp(
     return 0;
 
   default:
-    return DefWindowProcW(
-      hwnd,
-      msg,
-      wparam,
-      lparam
-    );
+    return DefWindowProcW(hwnd, msg, wparam, lparam);
   }
 }
 
