@@ -4,9 +4,12 @@
 /// === === === === === === DLL AND PLATFORM === === === === === ===
 #define xpkapi		///< idk what to do with this yet
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(XUS_WIN32_EXPOSE) 
 	#define XUS_WIN32
 	#include <windows.h>		///< as for now it'll only support windows
+#elif defined(__linux__) || defined(XUS_X11_EXPOSE)
+	#define XUS_X11
+	#include <X11/Xlib.h>
 #else
   #error "platform is not supported yet"
 #endif ///< platform
@@ -22,15 +25,24 @@ extern "C" {
 #include <wchar.h>
 
 typedef struct {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(XUS_WIN32_EXPOSE)
 	HWND 				hwnd;
 	HDC					hdc;
+#endif
+
+#if defined(__linux__) || defined(XUS_X11_EXPOSE)
+	Display * 	dhwnd;
+	Window			win;
+	XEvent 			evnt;
+	int					scr;
 #endif
 } XHWND;
 
 typedef struct {
   int width;
   int height;
+  int posX;
+  int posY;
   XHWND ws;					///< if you are wondering this is 'window struct' representing XHWND
   const char *title;
   bool running;				///< needed for loop
@@ -44,24 +56,17 @@ typedef struct {
 } xpkVector;
 */
 
-typedef struct {
-  DWORD code;
-  char msg[512];
-} xpkError;
 
 xpkapi int xpkBegin();   	///< this goes first, it begins the library
 
 xpkapi xpkWindow *
-xpkCreateWindow(					///< this goes in second, it creates the window
-  int width, 
+xpkBeginWindow( 				///< this goes in second, it creates the window
+  int positionX, 
+  int positionY,
+  int width,
   int height,
   const char *title);
 
-xpkapi unsigned long
-xpkGetError();
-
-xpkapi void
-xpkOpenWindow(xpkWindow *window, int nCmdShow);
 
 xpkapi bool 
 xpkWindowShouldClose(xpkWindow *window);		///< this is the loop
@@ -70,7 +75,7 @@ xpkapi void xpkWaitEvents(xpkWindow *window);
 xpkapi void xpkSwapFrames(xpkWindow *window);
 
 xpkapi void 
-xpkDeleteWindow(xpkWindow *window);
+xpkStopWindow(xpkWindow *window);
 
 xpkapi void xpkEnd();
 
@@ -95,18 +100,13 @@ xpkapi void xpkEnd();
 #ifdef XUS_WIN32
 #include <windows.h>
 
-// ERROR HANDLING
-xpkapi unsigned long
-xpkGetError() {
-	return GetLastError();
-}
 
 // STATIC VARIABLES
-static HINSTANCE 			hInst;
+static xpkWindow *  window;
+static HINSTANCE 	  hInst;
 static bool 				xpkInitialized;					///< needed for xpkBegin and xpkEnd
-static xpkError       		err;							///< needed for error handling
-static int 					xpkTrue 	= 1;	///< its like in GLFW	
-static int 					xpkFalse 	= 0;	///< also like in GLFW
+static int 					xpkTrue 	= 1;					///< its like in GLFW	
+static int 					xpkFalse 	= 0;					///< also like in GLFW
 
 // STATIC FUNCTIONS
 static LRESULT CALLBACK WinProc(
@@ -139,33 +139,47 @@ xpkapi int xpkBegin() {
     xpkEnd();
   }
 
-  return 1;
+  return 0;
 }
 
 xpkapi xpkWindow *
-xpkCreateWindow(
+xpkBeginWindow(
+  int positionX,
+  int positionY,
   int width,
   int height,
   const char *title) 
 {
-  xpkBegin();
-  xpkWindow *window = malloc(sizeof(*window));
+  window = malloc(sizeof(*window));
   if (!window)
     return NULL;
 
   window->width 	= width;
   window->height 	= height;
   window->title		= title;
+  window->posX    = positionX;
+  window->posY 		= positionY;
+
+  window->running = true;
+
+  int x = window->posX;
+  int y = window->posY;
 
   window->ws.hwnd = CreateWindowExA(
     0,
     "xpkWindowClass",
     title,
     WS_OVERLAPPEDWINDOW,
-    CW_USEDEFAULT,
-    CW_USEDEFAULT,
+
+    // position
+    x,
+    y,
+
+    // size
     width,
     height,
+
+    // other
     NULL,
     NULL,
     hInst,
@@ -183,18 +197,12 @@ xpkCreateWindow(
     return NULL;
   }
 
+  ShowWindow(window->ws.hwnd, SW_SHOW);
+  UpdateWindow(window->ws.hwnd);
+
   return window;
 }
 
-xpkapi void
-xpkOpenWindow(xpkWindow *window, int nCmdShow) {
-  if (!window) {
-    fprintf(stderr, "window doesn't exist");
-  }
-
-  ShowWindow(window->ws.hwnd, nCmdShow);
-  UpdateWindow(window->ws.hwnd);
-}
 
 xpkapi bool 
 xpkWindowShouldClose(xpkWindow *window) {
@@ -216,13 +224,28 @@ xpkWaitEvents(xpkWindow *window) {
 
 xpkapi void 
 xpkSwapFrames(xpkWindow *window) {
+  if (!window) {
+  #ifdef XUS_ERRORS
+  	fprintf(stderr, "window doesn't exist\n");
+  	fprintf(stderr, "create window before using function %s at line %d\n",
+  					__FUNCTION__, __LINE__);
+  	xpkEnd();
+  #endif
+  }
   SwapBuffers(window->ws.hdc);
 }
 
 xpkapi void 
-xpkDeleteWindow(xpkWindow *window) {
-  if (!window->ws.hwnd)
+xpkStopWindow(xpkWindow *window) {
+  if (!window) {
+  #ifdef XUS_ERRORS
+  	fprintf(stderr, "at function %s and line %d\n", 
+  					__FUNCTION__, __LINE__);
+    fprintf(stderr, "window doesn't exist\n");
+    fprintf(stderr, "create window before destructing it\n");
+  #endif
     return;
+	}
 
   if (window->ws.hdc) {
     ReleaseDC(window->ws.hwnd, window->ws.hdc);
@@ -235,17 +258,185 @@ xpkDeleteWindow(xpkWindow *window) {
   }
 } 
 
-xpkapi void xpkEnd() {
-  if (!xpkInitialized)
+xpkapi void 
+xpkEnd() {
+  if (!xpkInitialized) {
+  #ifdef XUS_ERRORS
+  	fprintf(stderr, "at function %s and line %d\n", __FUNCTION__, __LINE__);
+  	fprintf(stderr, "xpk has not been started yet\n");
+  	fprintf(stderr, "start xpk before using this function\n");
+ 	#endif
     return;
+  }
+
+  if (window)
+    xpkStopWindow(window);
 
   xpkInitialized 	= false;
-  hInst 			= NULL;
+  hInst 					= NULL;
 }
 
 #endif
 /// === XUS_WIN32 ===
 
+#if defined(__linux__) || defined(XUS_X11_EXPOSE)
+#include <X11/Xlib.h>
+
+static xpkWindow *xpkhwnd;
+
+static bool xpkHasBegun;
+
+xpkapi void
+xpkEnd(void);
+
+xpkapi int
+xpkBegin(void)
+{
+  xpkhwnd = malloc(sizeof(*xpkhwnd));
+  xpkHasBegun = true;
+  
+  xpkhwnd->ws.dhwnd = XOpenDisplay(NULL);
+  if (!xpkhwnd->ws.dhwnd) {
+    XCloseDisplay(xpkhwnd->ws.dhwnd);
+    return -1;
+  }
+
+  xpkhwnd->ws.scr 
+  	= DefaultScreen(xpkhwnd->ws.dhwnd);
+
+  return 1;
+}
+
+xpkapi xpkWindow *
+xpkBeginWindow(
+  int 					positionX,
+  int 					positionY,
+  int						width,
+  int						height,
+  const char * 	title) 
+{
+  if (!xpkHasBegun) {
+  #ifdef XUS_ERRORS
+  	fprintf(stderr, "at function %s in line %d\n", __func__, __LINE__);
+  	fprintf(stderr, "either:\n");
+  	fprintf(stderr, "xpkBegin() has not been called\n");
+  	fprintf(stderr, "or something else is happening.\n\n");
+  #endif
+  	return NULL;
+  }
+  xpkhwnd->width 		= width;
+  xpkhwnd->height 	= height;
+  xpkhwnd->title 		= title;
+  xpkhwnd->posX			= positionX;
+  xpkhwnd->posY			= positionY;
+  xpkhwnd->running  = true;
+
+  int x = xpkhwnd->posX;
+  int y = xpkhwnd->posY;
+
+	__auto_type root
+		= RootWindow(xpkhwnd->ws.dhwnd, xpkhwnd->ws.scr);
+
+	__auto_type bpix
+		= BlackPixel(xpkhwnd->ws.dhwnd, xpkhwnd->ws.scr);
+
+	__auto_type wpix
+		= WhitePixel(xpkhwnd->ws.dhwnd, xpkhwnd->ws.scr);
+
+  xpkhwnd->ws.win = XCreateSimpleWindow(
+    xpkhwnd->ws.dhwnd,			///< display
+    root,										///< parent window 
+    x,											///< x
+    y,											///< y
+    width,									///< width
+    height,									///< height
+    0,											///< border width
+    bpix,										///< black pixel/border color
+    wpix
+  );												///< white pixel/bg color
+
+  XMapWindow(
+    xpkhwnd->ws.dhwnd,
+    xpkhwnd->ws.win
+  );
+
+  XSelectInput(
+    xpkhwnd->ws.dhwnd,
+    xpkhwnd->ws.win,
+    ExposureMask
+  | StructureNotifyMask
+  );
+    
+
+  return xpkhwnd;
+}
+
+xpkapi bool
+xpkWindowShouldClose(xpkWindow *window)
+{
+  return !window->running;
+}
+
+xpkapi void
+xpkWaitEvents(xpkWindow *window)
+{
+  if (!window) {
+  #ifdef XUS_ERRORS
+  	fprintf(stderr, "in function %s and line %d\n", __FUNCTION__, __LINE__);
+  	fprintf(stderr, "window doesn't exist yet\n");
+  	fprintf(stderr, "create window before calling %s\n\n", __FUNCTION__);
+ 	#endif
+  	return;
+  }
+  __auto_type e = window->ws.evnt;
+  XNextEvent(window->ws.dhwnd, &e);
+  switch(e.type) {
+  case KeyPress:
+    break;
+  }
+}
+
+xpkapi void
+xpkSwapFrames(xpkWindow *window)
+{
+  XFlush(window->ws.dhwnd);
+}
+
+xpkapi void
+xpkStopWindow(xpkWindow *window)
+{
+  if (!window) {
+  #ifdef XUS_ERRORS
+  	fprintf(stderr, "at function %s and line %d\n", __FUNCTION__, __LINE__);
+  	fprintf(stderr, "window hasn't been created or doesn't exist yet\n");
+  	fprintf(stderr, "before window destruction, make sure to create the window\n\n");
+  #endif
+    return;
+  }
+
+  if (window->ws.win)
+    XDestroyWindow(window->ws.dhwnd, window->ws.win);
+  
+  if (window->ws.dhwnd)
+    XCloseDisplay(window->ws.dhwnd);
+
+  if (window)
+    free(window);
+}
+
+xpkapi void
+xpkEnd(void)
+{
+  if (xpkhwnd)
+    xpkStopWindow(xpkhwnd);
+
+  if (xpkHasBegun == true)
+    xpkHasBegun = false;
+}
+
+#endif // __linux__
+
 #endif
+
 
 
