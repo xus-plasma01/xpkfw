@@ -27,8 +27,9 @@ int main(void)
   wc.hInstance     = hInstance;
   wc.lpszClassName = CLSNAME;
     
-  if (!RegisterClassW(&wc)) 
-    return 1;
+  if (!RegisterClassW(&wc)) {
+  	return 1;
+  }
 
   HWND hwnd = CreateWindowExW(
     0,
@@ -59,4 +60,3 @@ int main(void)
 
   return 0;
 }
-

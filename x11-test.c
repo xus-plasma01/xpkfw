@@ -1,46 +1,39 @@
 #include <X11/Xlib.h>
-#include <stdio.h>
 
-int main(void)
+int main()
 {
-  Display *dhwnd;
-  Window win;
-  XEvent evnt;
-  int scr;
+  Display* MainDisplay = XOpenDisplay(0);
+  Window RootWindow = XDefaultRootWindow(MainDisplay);
+    
+  int WindowX = 0;
+  int WindowY = 0;
+  int WindowWidth = 800;
+  int WindowHeight = 600;
+  int BorderWidth = 0;
+  int WindowDepth = CopyFromParent;
+  int WindowClass = CopyFromParent;
+  Visual* WindowVisual = CopyFromParent;
 
-  dhwnd = XOpenDisplay(NULL);
-  if (dhwnd == NULL) {
-    fprintf(stderr, "cannot open display\n");
-    return 1;
+  int AttributeValueMask = CWBackPixel;
+  XSetWindowAttributes WindowAttributes = {};
+  WindowAttributes.background_pixel = 0xffafe9af;
+
+  Window MainWindow = XCreateWindow(MainDisplay, RootWindow, 
+          WindowX, WindowY, WindowWidth, WindowHeight,
+          BorderWidth, WindowDepth, WindowClass, WindowVisual,
+          AttributeValueMask, &WindowAttributes);
+
+  Window win2 = XCreateWindow(MainDisplay, RootWindow, 
+            WindowX, WindowY, WindowWidth, WindowHeight,
+            BorderWidth, WindowDepth, WindowClass, WindowVisual,
+            AttributeValueMask, &WindowAttributes);
+
+  XMapWindow(MainDisplay, MainWindow);
+  XMapWindow(MainDisplay, win2);
+
+  for(;;) {
+      XEvent GeneralEvent = {};
+      XNextEvent(MainDisplay, &GeneralEvent);
   }
-
-  scr = DefaultScreen(dhwnd);
-  win = XCreateSimpleWindow(
-    dhwnd,
-    RootWindow(dhwnd, scr),
-    10,
-    10,
-    200,
-    200,
-    1,
-    BlackPixel(dhwnd, scr),
-    WhitePixel(dhwnd, scr)
-  );
-
-  XMapWindow(dhwnd, win);
-  XSelectInput(
-    dhwnd, 
-    win, 
-    ExposureMask 
-  | KeyPressMask
-  );
-
-  while (1) {
-    XNextEvent(dhwnd, &evnt);
-    if (evnt.type == KeyPress)
-      break;
-  }
-
-  XCloseDisplay(dhwnd);
-  return 0;
 }
+
