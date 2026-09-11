@@ -4,7 +4,7 @@
 int main(void) {
 	xpkBegin();
 
-	xpkWindow *window = xpkBeginWindow(0, 0, 800, 600, "window");
+	xpkWindow *window   = xpkBeginWindow(0, 0, 800, 600, "window");
 	xpkWindow *win2 	= xpkBeginWindow(200, 100, 800, 600, "window2");
 	xpkWindow *w3 		= xpkBeginWindow(500, 500, 800, 600, "w3");
 
